@@ -1,23 +1,12 @@
-# Evidencias de despliegue (E5)
+# Evidencias de error
 
-Esta carpeta debe contener, antes de la entrega:
+1. **Run fallido** al aplicar
+   `V202608081100__add_estado_bicicleta.sql` y hacer en Neon la consulta
+   `UPDATE bicicletas SET estado = 'en_reparacion' WHERE bicicleta_id = 3;` sale el error
+   `ERROR: value too long for type character varying(8)`.
+   <img width="1272" height="460" alt="image" src="https://github.com/user-attachments/assets/d3ddb13c-08a6-4f4b-a701-6d58bf42ccd8" />
 
-1. **Captura o enlace de un run exitoso** del workflow `Flyway Migrate` en la pestaña
-   *Actions* del repositorio (aplicando las migraciones desde
-   `V202608081000__baseline_taller_bicicletas.sql` hasta
-   `V202608081045__add_constraint_estado_orden.sql`, más `R__` sin errores).
-2. **Captura o enlace del run fallido** al intentar aplicar
-   `V202608081100__add_estado_bicicleta.sql` seguido de un
-   `UPDATE ... SET estado = 'en_reparacion'` que dispara
-   `ERROR: value too long for type character varying(8)` (o, si se prueba directo en
-   Neon SQL Editor, captura del error ahí).
-3. **Captura o enlace del run exitoso posterior** que aplica
-   `V202608081115__fix_estado_bicicleta_length.sql` y deja el pipeline en verde de nuevo.
-4. Un párrafo corto (aquí mismo o en un `.md` separado) explicando: qué causó el error,
-   por qué no se corrigió editando `V202608081100`, y qué hace exactamente
-   `V202608081115`.
+2. **Run exitoso posterior** al aplicar
+   `V202608081115__fix_estado_bicicleta_length.sql` Se vuelve a hacer la consulta y obtenemos resultado exitoso.
+   <img width="1296" height="394" alt="image" src="https://github.com/user-attachments/assets/ca65122b-8d5c-42f5-bae3-c48dfc2ff627" />
 
-Formato sugerido: capturas de pantalla `.png` numeradas
-(`01_run_exitoso_baseline_a_constraint.png`, `02_run_fallido_estado_bicicleta.png`,
-`03_run_exitoso_fix_roll_forward.png`) o enlaces directos a los runs en
-`https://github.com/<usuario>/<repo>/actions/runs/<id>`.
