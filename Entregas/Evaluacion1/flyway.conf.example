@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# Plantilla de configuración de Flyway — proyecto "Rueda Libre"
+#
+# Uso:
+#   1. cp flyway.conf.example flyway.conf
+#   2. Reemplaza HOST, USUARIO y PASSWORD con los datos de TU branch dev de Neon.
+#   3. Ejecuta desde la raíz del repositorio: flyway info
+#
+# flyway.conf está excluido en el .gitignore — nunca se versiona.
+# Solo flyway.conf.example se sube al repositorio.
+#
+# ⚠️ Esta configuración apunta a DEV. La branch main la migra GitHub Actions,
+#    nunca tu terminal.
+# ---------------------------------------------------------------------------
+
+# Neon : postgresql://usuario:clave@HOST/neondb?sslmode=require
+# JDBC : jdbc:postgresql://HOST/neondb?sslmode=require
+# No incluyas `channel_binding=require`: el driver JDBC no lo reconoce.
+flyway.url=jdbc:postgresql://HOST.us-east-2.aws.neon.tech/neondb?sslmode=require
+flyway.user=USUARIO
+flyway.password=PASSWORD
+
+flyway.locations=filesystem:sql_migrations
+
+flyway.cleanDisabled=true
+flyway.validateMigrationNaming=true
+flyway.outOfOrder=false
