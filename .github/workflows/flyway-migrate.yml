@@ -27,7 +27,7 @@ concurrency:
 
 env:
   FLYWAY_IMAGE: flyway/flyway:13.1.0-alpine
-  MIGRATIONS_DIR: sql_migrations
+  MIGRATIONS_DIR: Entregas/Evaluacion1/sql_migrations
 
 jobs:
   migrate:
