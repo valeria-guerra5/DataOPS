@@ -1,0 +1,10 @@
+.env
+.env.*
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
