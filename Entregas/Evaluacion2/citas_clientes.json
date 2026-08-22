@@ -1,0 +1,68 @@
+[
+  {
+    "appointment_id": "APT-801",
+    "scheduled_for": "2026-08-14T09:00:00",
+    "status": "confirmed",
+    "customer": {
+      "name": "Sofía Martínez",
+      "contact": {
+        "phone": "+57-300-555-0181",
+        "notifications": [
+          "whatsapp",
+          "email"
+        ]
+      }
+    },
+    "bike": {
+      "type": "hybrid",
+      "brand": "Scott",
+      "services_requested": [
+        "mantenimiento general",
+        "revisión de frenos"
+      ]
+    }
+  },
+  {
+    "appointment_id": "APT-802",
+    "scheduled_for": "2026-08-14T11:30:00",
+    "status": "confirmed",
+    "customer": {
+      "name": "Felipe Restrepo",
+      "contact": {
+        "phone": "+57-301-555-0142",
+        "notifications": [
+          "whatsapp"
+        ]
+      }
+    },
+    "bike": {
+      "type": "mountain",
+      "brand": "Cannondale",
+      "services_requested": [
+        "cambio de cadena"
+      ]
+    }
+  },
+  {
+    "appointment_id": "APT-803",
+    "scheduled_for": "2026-08-15T15:00:00",
+    "status": "cancelled",
+    "customer": {
+      "name": "Mariana López",
+      "contact": {
+        "phone": "+57-302-555-0127",
+        "notifications": [
+          "email"
+        ]
+      }
+    },
+    "bike": {
+      "type": "road",
+      "brand": "Bianchi",
+      "services_requested": [
+        "centrado de rueda",
+        "ajuste de cambios"
+      ]
+    }
+  }
+]

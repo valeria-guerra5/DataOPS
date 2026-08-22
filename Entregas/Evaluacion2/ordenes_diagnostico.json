@@ -1,0 +1,75 @@
+[
+  {
+    "external_order_ref": "EXT-2401",
+    "opened_at": "2026-08-08T08:30:00",
+    "priority": "normal",
+    "customer": {
+      "name": "Laura Gómez",
+      "contact": {
+        "channel": "whatsapp",
+        "preferred_time": "afternoon"
+      }
+    },
+    "bike": {
+      "nickname": "La Montañera",
+      "category": "mountain"
+    },
+    "work": {
+      "estimated_hours": 2.5,
+      "requested_tasks": [
+        "ajuste de frenos",
+        "limpieza de transmisión"
+      ],
+      "customer_authorized": true
+    }
+  },
+  {
+    "external_order_ref": "EXT-2402",
+    "opened_at": "2026-08-09T10:10:00",
+    "priority": "high",
+    "customer": {
+      "name": "Andrés Ruiz",
+      "contact": {
+        "channel": "phone",
+        "preferred_time": "morning"
+      }
+    },
+    "bike": {
+      "nickname": "Rayo",
+      "category": "road"
+    },
+    "work": {
+      "estimated_hours": 1.5,
+      "requested_tasks": [
+        "centrado de rueda",
+        "revisión de cambios"
+      ],
+      "customer_authorized": false
+    }
+  },
+  {
+    "external_order_ref": "EXT-2403",
+    "opened_at": "2026-08-10T15:45:00",
+    "priority": "normal",
+    "customer": {
+      "name": "Camilo Torres",
+      "contact": {
+        "channel": "email",
+        "preferred_time": "evening"
+      }
+    },
+    "bike": {
+      "nickname": "Cometa",
+      "category": "gravel"
+    },
+    "work": {
+      "estimated_hours": 3,
+      "requested_tasks": [
+        "cambio de cadena",
+        "ajuste de frenos",
+        "lubricación"
+      ],
+      "customer_authorized": true
+    }
+  }
+]
