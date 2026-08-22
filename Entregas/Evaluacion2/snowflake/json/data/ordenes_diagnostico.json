@@ -5,6 +5,7 @@
     "priority": "normal",
     "customer": {
       "name": "Laura Gómez",
+      "bank_account": "9685413224",
       "contact": {
         "channel": "whatsapp",
         "preferred_time": "afternoon"
@@ -29,6 +30,7 @@
     "priority": "high",
     "customer": {
       "name": "Andrés Ruiz",
+      "bank_account": "5157651651",
       "contact": {
         "channel": "phone",
         "preferred_time": "morning"
@@ -53,6 +55,7 @@
     "priority": "normal",
     "customer": {
       "name": "Camilo Torres",
+      "bank_account": "2748261935",
       "contact": {
         "channel": "email",
         "preferred_time": "evening"

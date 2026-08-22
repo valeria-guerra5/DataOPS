@@ -27,7 +27,7 @@ CREATE OR REPLACE TASK TASK_FLATTEN_ORDENES_DIAGNOSTICO
   AFTER TASK_INGEST_ORDENES_DIAGNOSTICO
 AS
   INSERT OVERWRITE INTO STG_ORDENES_DIAGNOSTICO (
-      external_order_ref, opened_at, priority, customer_name, contact_channel,
+      external_order_ref, opened_at, priority, customer_name, customer_bank_account, contact_channel,
       bike_nickname, bike_category, estimated_hours, customer_authorized, requested_task
   )
   SELECT
@@ -35,6 +35,7 @@ AS
       raw_data:opened_at::TIMESTAMP_NTZ,
       raw_data:priority::STRING,
       raw_data:customer.name::STRING,
+      raw_data:customer.bank_account::STRING,
       raw_data:customer.contact.channel::STRING,
       raw_data:bike.nickname::STRING,
       raw_data:bike.category::STRING,
@@ -50,8 +51,8 @@ SHOW TASKS;
 -- 2. Activar el DAG completo de una sola vez
 -- -----------------------------------------------------------------------------
 
-ALTER TASK TASK_FLATTEN_ORDENES_DIAGNOSTICO RESUME
-ALTER TASK TASK_INGEST_ORDENES_DIAGNOSTICO RESUME
+ALTER TASK TASK_FLATTEN_ORDENES_DIAGNOSTICO RESUME;
+ALTER TASK TASK_INGEST_ORDENES_DIAGNOSTICO RESUME;
 
 SHOW TASKS; -- Ambas deberían aparecer en estado "started".
 

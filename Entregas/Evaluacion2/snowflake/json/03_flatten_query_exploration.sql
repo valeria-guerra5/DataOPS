@@ -17,6 +17,7 @@ SELECT
     raw_data:opened_at::TIMESTAMP_NTZ             AS opened_at,
     raw_data:priority::STRING                     AS priority,
     raw_data:customer.name::STRING                AS customer_name,
+    raw_data:customer.bank_account::STRING        AS customer_bank_account,
     raw_data:customer.contact.channel::STRING     AS contact_channel,
     raw_data:bike.nickname::STRING                AS bike_nickname,
     raw_data:bike.category::STRING                AS bike_category,
@@ -31,7 +32,8 @@ CREATE TABLE IF NOT EXISTS STG_ORDENES_DIAGNOSTICO (
     external_order_ref   STRING,
     opened_at            TIMESTAMP_NTZ,
     priority             STRING,
-    customer_name        STRING,   -- PII: protegida con Masking Policy
+    customer_name        STRING,   
+    customer_bank_account STRING,   -- PII: protegida con Masking Policy
     contact_channel      STRING,
     bike_nickname        STRING,
     bike_category        STRING,
@@ -45,7 +47,7 @@ COMMENT = 'Diagnósticos externos aplanados (1 fila por tarea solicitada). Fuent
 TRUNCATE TABLE STG_ORDENES_DIAGNOSTICO;
 
 INSERT INTO STG_ORDENES_DIAGNOSTICO (
-    external_order_ref, opened_at, priority, customer_name, contact_channel,
+    external_order_ref, opened_at, priority, customer_name, customer_bank_account, contact_channel,
     bike_nickname, bike_category, estimated_hours, customer_authorized, requested_task
 )
 SELECT
@@ -53,6 +55,7 @@ SELECT
     raw_data:opened_at::TIMESTAMP_NTZ,
     raw_data:priority::STRING,
     raw_data:customer.name::STRING,
+    raw_data:customer.bank_account::STRING,
     raw_data:customer.contact.channel::STRING,
     raw_data:bike.nickname::STRING,
     raw_data:bike.category::STRING,

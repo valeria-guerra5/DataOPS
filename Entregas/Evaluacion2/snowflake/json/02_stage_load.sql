@@ -17,18 +17,21 @@ CREATE OR REPLACE FILE FORMAT rueda_libre_json_format
 -- -----------------------------------------------------------------------------
 -- 2. Internal Stage
 -- -----------------------------------------------------------------------------
-CREATE OR REPLACE STAGE rueda_libre_stage
+CREATE OR REPLACE STAGE RUEDA_LIBRE_STAGE
     FILE_FORMAT = rueda_libre_json_format;
 
-LIST @rueda_libre_stage;
+LIST @RUEDA_LIBRE_STAGE;
 
 SELECT $1
-FROM @rueda_libre_stage (FILE_FORMAT => rueda_libre_json_format)
+FROM @RUEDA_LIBRE_STAGE (FILE_FORMAT => rueda_libre_json_format)
 LIMIT 5;
 
 -- -----------------------------------------------------------------------------
 -- 3. RAW_ORDENES_DIAGNOSTICO — la tabla de una sola columna VARIANT
 -- -----------------------------------------------------------------------------
+
+TRUNCATE TABLE RAW_ORDENES_DIAGNOSTICO;
+
 CREATE TABLE IF NOT EXISTS RAW_ORDENES_DIAGNOSTICO (
     raw_data        VARIANT
 )
@@ -40,6 +43,4 @@ FROM (
 )
 FILE_FORMAT = (FORMAT_NAME = rueda_libre_json_format);
 
-SELECT COUNT(*) FROM RAW_ORDENES_DIAGNOSTICO;
-
-
+SELECT * FROM RAW_ORDENES_DIAGNOSTICO;
