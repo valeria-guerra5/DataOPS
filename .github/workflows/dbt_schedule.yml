@@ -1,0 +1,107 @@
+# ---------------------------------------------------------------------------
+# Transformación programada con dbt vía GitHub Actions
+#
+# Qué hace: en cada ejecución instala las dependencias del proyecto dbt con uv, resuelve
+# los paquetes del proyecto (dbt deps) y corre `dbt build` — materializa todos los
+# modelos y ejecuta todos los tests declarados en un solo comando. Reemplaza el
+# scheduler de dbt Cloud: la programación y la ejecución quedan versionadas en este
+# archivo, no en la configuración de un servicio externo.
+#
+# Secretos requeridos (Settings → Secrets and variables → Actions):
+#   SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_ROLE,
+#   SNOWFLAKE_WAREHOUSE, SNOWFLAKE_DATABASE, SNOWFLAKE_SCHEMA
+# ---------------------------------------------------------------------------
+
+name: dbt Schedule
+
+# ¿Por qué el cron corre a las 07:00 UTC y no a medianoche? Porque dbt build lee de la
+# capa RAW, y el ELT de la Sesión 4 y la ingesta de la Sesión 5 deben haber corrido antes.
+# Un cron que despierta antes que sus propias fuentes construye modelos sobre datos de
+# ayer sin que nada lo señale como error.
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "Entregas/Evaluacion3/**"
+      - ".github/workflows/dbt_schedule.yml"
+
+# Igual que en el workflow de Flyway: dos corridas simultáneas contra el mismo warehouse
+# podrían pisarse la materialización de un modelo a mitad de escritura. Se serializan.
+concurrency:
+  group: dbt-produccion
+  cancel-in-progress: false
+
+env:
+  # ¡Ojo! No la llames DBT_PROJECT_DIR — dbt-core reconoce esa variable de entorno como
+  # equivalente a su propio flag --project-dir. Con ambas cosas activas (esta variable Y
+  # el `working-directory` de cada step, que ya nos posiciona dentro de la carpeta), dbt
+  # intenta resolver la ruta relativa una segunda vez desde dentro de sí misma y falla con
+  # "Path ... does not exist" — encontrado y corregido en la primera corrida real en CI.
+  PROJECT_DIR: Entregas/Evaluacion3
+
+jobs:
+  build:
+    name: dbt build sobre Snowflake
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      # ¿Por qué uv y no `pip install dbt-snowflake` directo? Misma razón que en el resto
+      # del curso: uv resuelve contra el lockfile del proyecto (uv.lock), así que la
+      # versión de dbt-core y dbt-snowflake que corre en CI es exactamente la misma que
+      # corrió en el último `uv sync` local — nada de "en mi máquina sí compilaba".
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Sincronizar el entorno del proyecto dbt
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: uv sync --locked
+
+      # profiles.yml nunca se versiona (trae la forma de resolver credenciales, aunque no
+      # las credenciales en sí) — el runner parte del mismo profiles.yml.example que usa
+      # cualquier persona en local. Los valores reales los inyectan los env_var() más
+      # abajo, resueltos contra los Secrets del step de dbt build.
+      - name: Crear profiles.yml desde la plantilla
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: cp profiles.yml.example profiles.yml
+
+      - name: dbt deps
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: uv run dbt deps --profiles-dir .
+
+      # dbt build = dbt run + dbt test + dbt snapshot + dbt seed, respetando el orden del
+      # DAG. Si un test de un modelo Silver falla, los modelos Gold que dependen de él ni
+      # siquiera se intentan — falla rápido, en la capa donde ocurrió el problema.
+      - name: dbt build
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+        run: uv run dbt build --profiles-dir . --target dev
+
+      - name: Resumen del run
+        if: always()
+        run: |
+          {
+            echo "## dbt build — resultado"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "|---|---|"
+            echo "| Proyecto | \`${PROJECT_DIR}\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Disparado por | \`${{ github.event_name }}\` |"
+            echo "| Estado | \`${{ job.status }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

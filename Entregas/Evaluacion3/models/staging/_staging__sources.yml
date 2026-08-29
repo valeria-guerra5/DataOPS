@@ -34,7 +34,7 @@ sources:
       External Stage (Momento 2, patrón Sesión 5). Cada fila es un payload JSON completo
       sin aplanar; la tabla no tiene esquema propio más allá de la columna VARIANT.
     database: RUEDA_LIBRE
-    schema: RAW_JSON
+    schema: ORDENES
     tables:
       - name: raw_ordenes_diagnostico
         description: >

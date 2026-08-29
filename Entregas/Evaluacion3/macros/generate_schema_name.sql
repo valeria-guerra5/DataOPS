@@ -4,7 +4,7 @@
     Por defecto, dbt concatena el schema del target (profiles.yml) con el +schema
     declarado en dbt_project.yml — por ejemplo CORE_staging en vez de STAGING. Eso
     tiene sentido cuando varios desarrolladores comparten una sola base y necesitan
-    aislarse por prefijo, pero acá cada capa Medallón (RAW, RAW_JSON, STAGING, CORE) ya
+    aislarse por prefijo, pero acá cada capa Medallón (RAW, ORDENES, STAGING, CORE) ya
     es su propio schema con un nombre que cuenta la historia del dato. Este override
     hace que +schema mande solo, sin el prefijo del target — el mismo patrón que
     recomienda la documentación oficial de dbt para este caso
