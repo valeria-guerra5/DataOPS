@@ -49,6 +49,7 @@ final as (
         coalesce(ordenes_por_cliente.gasto_total, 0)     as gasto_total,
         ordenes_por_cliente.primera_orden_at,
         ordenes_por_cliente.ultima_orden_at,
+        datediff('day', ordenes_por_cliente.ultima_orden_at, current_date()) as dias_desde_ultima_orden,
         case
             when ordenes_por_cliente.total_ordenes is null then 'sin_ordenes'
             when ordenes_por_cliente.total_ordenes >= 5     then 'alto'

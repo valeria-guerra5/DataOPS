@@ -40,6 +40,19 @@ models:
         tests:
           - accepted_values:
               values: ['sin_ordenes', 'bajo', 'medio', 'alto']
+      - name: dias_desde_ultima_orden
+        description: >
+          Días transcurridos desde la última orden del cliente hasta hoy. NULL si el
+          cliente nunca ha traído una bicicleta (nivel_actividad = 'sin_ordenes').
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                # Justificación de negocio: un valor negativo significaría una orden
+                # con fecha en el futuro — imposible en este dominio, señal de un dato
+                # mal cargado desde Neon.
+                severity: error
+                where: "dias_desde_ultima_orden is not null"
 
   - name: fct_diagnosticos_externos
     description: >
