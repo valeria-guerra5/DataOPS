@@ -1,0 +1,23 @@
+# Plantilla de profiles.yml — cópiala fuera del repositorio (o exporta DBT_PROFILES_DIR
+# apuntando a esta carpeta) y NO la versiones con credenciales reales.
+#
+# dbt busca profiles.yml en ~/.dbt/ por defecto. Para mantenerlo junto al proyecto sin
+# arriesgar un commit accidental, corre los comandos con:
+#   uv run dbt <comando> --profiles-dir .
+#
+# Todos los valores se leen de variables de entorno con env_var() — nunca hay una
+# credencial en texto plano en este archivo, ni siquiera en la copia local.
+dataops_course:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'DATAOPS_LOADER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'WH_DATAOPS') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'PARCH_AND_POSEY') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}"
+      threads: 4
+      client_session_keep_alive: false

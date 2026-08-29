@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description:Descripcion de las validaciones que haremos
+    columns:
+      - name: account_id
+        description: Llave primaria de la cuenta.
+        tests:
+          - unique
+          - not_null
+      - name: account_name
+        tests:
+          - not_null
+      - name: sales_rep_id
+        tests:
+          - not_null
+
+  - name: stg_<otra_entidad>
+    description: Descripcion
+    columns:
+      - name: <column_name>
+        description: Description
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: <field>
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 500000
+          - dbt_expectations.expect_column_values_to_match_regex:
+              arguments:
+                regex: '^\+?[0-9\-]+$'
+              config:
+                where: "contact_phone is not null"
+      

@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw_rueda_libre
+    database: RUEDA_LIBRE
+    schema: RAW
+    tables:
+      - name: <table_1_name>
+        description: Descripcion table 1
+      - name: <table_2_name>
+        description: Descripcion table 1

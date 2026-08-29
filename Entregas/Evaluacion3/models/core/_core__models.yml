@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: dim_orders_engagement
+    description: Description
+    columns:
+      - name: account_id
+        tests:
+          - unique
+          - not_null
