@@ -67,8 +67,7 @@ models:
         tests:
           - not_null
           - dbt_expectations.expect_column_values_to_be_between:
-              min_value: -5
-              max_value: 0
+              min_value: 0
               config:
                 # Justificación de negocio: un precio negativo en el catálogo es
                 # imposible por definición — indicaría un error de captura, no un
