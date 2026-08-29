@@ -1,0 +1,18 @@
+# Credenciales — nunca se suben
+.env
+.env.*
+!.env.example
+profiles.yml
+!profiles.yml.example
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

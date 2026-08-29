@@ -2,10 +2,45 @@ version: 2
 
 sources:
   - name: raw_rueda_libre
+    description: >
+      Capa RAW relacional — tablas de "Rueda Libre" extraídas de Neon (PostgreSQL) sin
+      transformar, vía el pipeline ELT del Momento 2 (Entregas/Evaluacion2/elt/). Mismos
+      nombres y tipos aproximados que en el origen.
     database: RUEDA_LIBRE
     schema: RAW
     tables:
-      - name: <table_1_name>
-        description: Descripcion table 1
-      - name: <table_2_name>
-        description: Descripcion table 1
+      - name: clientes
+        description: Dueños de las bicicletas. Un cliente puede tener varias bicicletas.
+      - name: bicicletas
+        description: Bicicletas registradas, cada una asociada a un cliente.
+      - name: tecnicos
+        description: Mecánicos del taller que atienden órdenes de servicio y citas.
+      - name: servicios
+        description: Catálogo fijo de servicios ofrecidos (precio base, duración estimada).
+      - name: repuestos
+        description: Inventario de piezas del taller (precio unitario, stock disponible).
+      - name: ordenes_servicio
+        description: Una intervención sobre una bicicleta, asignada a un técnico.
+      - name: orden_servicio_detalle
+        description: Servicios aplicados dentro de cada orden (N a N con servicios).
+      - name: orden_repuestos
+        description: Repuestos consumidos dentro de cada orden (N a N con repuestos).
+      - name: citas
+        description: Turno agendado por un cliente antes de convertirse en orden de servicio.
+
+  - name: raw_rueda_libre_json
+    description: >
+      Capa RAW semi-estructurada — diagnósticos externos aterrizados como VARIANT vía
+      External Stage (Momento 2, patrón Sesión 5). Cada fila es un payload JSON completo
+      sin aplanar; la tabla no tiene esquema propio más allá de la columna VARIANT.
+    database: RUEDA_LIBRE
+    schema: RAW_JSON
+    tables:
+      - name: raw_ordenes_diagnostico
+        description: >
+          Diagnósticos previos entrados por un canal externo (formulario web / WhatsApp),
+          antes de convertirse en una orden de servicio formal. Ver
+          Entregas/Evaluacion2/docs/decisiones_momento_2.md para el porqué de esta fuente.
+        columns:
+          - name: raw_data
+            description: Payload JSON completo de un diagnóstico externo, sin aplanar.

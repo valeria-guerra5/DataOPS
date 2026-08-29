@@ -1,47 +1,235 @@
 version: 2
 
 models:
-  - name: stg_orders
-    description:Descripcion de las validaciones que haremos
+  - name: stg_clientes
+    description: Un registro por cliente del taller. Grano = 1 fila por cliente_id.
     columns:
-      - name: account_id
-        description: Llave primaria de la cuenta.
+      - name: cliente_id
+        description: Llave primaria del cliente.
         tests:
           - unique
           - not_null
-      - name: account_name
+      - name: email
+        description: Correo del cliente. Único en el origen (UNIQUE en Neon).
+        tests:
+          - unique
+          - not_null
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+              config:
+                # Justificación de negocio: el correo se usa para enviar confirmaciones
+                # de citas y facturas — uno mal formado significa que el cliente nunca
+                # se entera de que su bicicleta está lista.
+                severity: warn
+      - name: nivel_fidelidad
+        description: Segmento de fidelidad del cliente, asignado manualmente por recepción.
+        tests:
+          - accepted_values:
+              values: ['nuevo', 'frecuente', 'vip']
+
+  - name: stg_bicicletas
+    description: Un registro por bicicleta registrada. Grano = 1 fila por bicicleta_id.
+    columns:
+      - name: bicicleta_id
+        tests:
+          - unique
+          - not_null
+      - name: cliente_id
+        description: Cliente dueño de la bicicleta.
         tests:
           - not_null
-      - name: sales_rep_id
+          - relationships:
+              to: ref('stg_clientes')
+              field: cliente_id
+      - name: estado
+        description: Estado operativo de la bicicleta.
         tests:
+          - accepted_values:
+              values: ['activa', 'en_reparacion', 'retirada']
+
+  - name: stg_tecnicos
+    description: Un registro por técnico del taller. Grano = 1 fila por tecnico_id.
+    columns:
+      - name: tecnico_id
+        tests:
+          - unique
           - not_null
 
-  - name: stg_<otra_entidad>
-    description: Descripcion
+  - name: stg_servicios
+    description: Catálogo fijo de servicios ofrecidos. Grano = 1 fila por servicio_id.
     columns:
-      - name: <column_name>
-        description: Description
+      - name: servicio_id
         tests:
           - unique
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_orders')
-                field: <field>
-      - name: account_id
+      - name: precio_base
+        description: Precio de lista del servicio, antes de cualquier ajuste por orden.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                # Justificación de negocio: un precio negativo en el catálogo es
+                # imposible por definición — indicaría un error de captura, no un
+                # descuento (los descuentos se aplican en la orden, no en el catálogo).
+                severity: error
+
+  - name: stg_repuestos
+    description: Inventario de piezas del taller. Grano = 1 fila por repuesto_id.
+    columns:
+      - name: repuesto_id
+        tests:
+          - unique
+          - not_null
+      - name: stock
+        description: Unidades disponibles en inventario.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                # Justificación de negocio: el stock nunca debería quedar negativo —
+                # si eso ocurre, el proceso que descuenta inventario al cerrar una orden
+                # tiene un bug, y este test es la primera alarma.
+                severity: error
+
+  - name: stg_ordenes_servicio
+    description: Una intervención sobre una bicicleta. Grano = 1 fila por orden_id.
+    columns:
+      - name: orden_id
+        tests:
+          - unique
+          - not_null
+      - name: bicicleta_id
         tests:
           - not_null
           - relationships:
-              arguments:
-                to: ref('stg_accounts')
-                field: account_id
-          - dbt_expectations.expect_column_values_to_be_between:
-              arguments:
-                min_value: 0
-                max_value: 500000
-          - dbt_expectations.expect_column_values_to_match_regex:
-              arguments:
-                regex: '^\+?[0-9\-]+$'
+              to: ref('stg_bicicletas')
+              field: bicicleta_id
+      - name: tecnico_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_tecnicos')
+              field: tecnico_id
+      - name: estado
+        tests:
+          - accepted_values:
+              values: ['recibida', 'en_diagnostico', 'en_reparacion', 'lista', 'entregada', 'cancelada']
               config:
-                where: "contact_phone is not null"
-      
+                # No todos los valores históricos del dataset sintético cubren el ciclo
+                # completo — se deja en warn para no bloquear el build por datos de
+                # ejemplo, pero documenta el ciclo de vida esperado de una orden.
+                severity: warn
+      - name: total
+        description: Total cobrado por la orden (mano de obra + repuestos), calculado en Neon.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                severity: error
+
+  - name: stg_orden_servicio_detalle
+    description: >
+      Servicios aplicados dentro de una orden. Grano = 1 fila por (orden_id, servicio_id)
+      — una orden puede tener varias líneas de servicio.
+    columns:
+      - name: detalle_id
+        tests:
+          - unique
+          - not_null
+      - name: orden_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_ordenes_servicio')
+              field: orden_id
+      - name: servicio_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_servicios')
+              field: servicio_id
+
+  - name: stg_orden_repuestos
+    description: >
+      Repuestos consumidos dentro de una orden. Grano = 1 fila por (orden_id,
+      repuesto_id) — una orden puede consumir varios repuestos distintos.
+    columns:
+      - name: orden_repuesto_id
+        tests:
+          - unique
+          - not_null
+      - name: orden_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_ordenes_servicio')
+              field: orden_id
+      - name: repuesto_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_repuestos')
+              field: repuesto_id
+
+  - name: stg_citas
+    description: Turno agendado por un cliente. Grano = 1 fila por cita_id.
+    columns:
+      - name: cita_id
+        tests:
+          - unique
+          - not_null
+      - name: cliente_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clientes')
+              field: cliente_id
+      - name: bicicleta_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_bicicletas')
+              field: bicicleta_id
+
+  - name: stg_ordenes_diagnostico
+    description: >
+      Diagnósticos externos aplanados (patrón Sesión 5, fuente Momento 2). Grano = 1
+      fila por (external_order_ref, requested_task) — un diagnóstico con 3 tareas
+      solicitadas produce 3 filas.
+    columns:
+      - name: external_order_ref
+        description: >
+          Identificador del diagnóstico en el canal externo. NO es una FK a
+          ordenes_servicio.orden_id — es un canal previo que todavía no tiene llave
+          compartida con el modelo transaccional (ver docs/decisiones_momento_3.md).
+        tests:
+          - not_null
+      - name: priority
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['normal', 'high']
+              config:
+                # Justificación de negocio: recepción usa este campo para decidir el
+                # orden de atención — un valor fuera de {normal, high} significa que el
+                # formulario externo cambió sus opciones sin avisar, y hay que
+                # enterarse aquí, no cuando alguien filtra mal un reporte.
+                severity: error
+      - name: customer_name
+        description: Nombre del cliente tal como lo escribió en el canal externo.
+        tests:
+          - not_null
+      - name: estimated_hours
+        description: Horas estimadas de trabajo, calculadas por quien recibió el diagnóstico.
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 8
+              config:
+                # Justificación de negocio: el taller opera en jornadas de 8 horas — un
+                # diagnóstico que estima más que eso probablemente es un error de
+                # captura (¿minutos en vez de horas?), no un trabajo real.
+                severity: warn

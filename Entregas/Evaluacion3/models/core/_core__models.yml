@@ -1,10 +1,72 @@
 version: 2
 
 models:
-  - name: dim_orders_engagement
-    description: Description
+  - name: dim_clientes_valor
+    description: >
+      Vista de negocio del valor histórico de cada cliente: cuántas órdenes ha traído,
+      cuánto ha gastado en total, y hace cuánto no vuelve. Responde la pregunta que
+      recepción hace todos los días: "¿a quién le escribimos primero para una campaña
+      de fidelización?". Grano: 1 fila por cliente_id (todos los clientes, incluidos
+      los que nunca han generado una orden — `nivel_actividad = 'sin_ordenes'`).
     columns:
-      - name: account_id
+      - name: cliente_id
+        description: Llave primaria del cliente. Mismo grano que stg_clientes.
         tests:
           - unique
           - not_null
+      - name: total_ordenes
+        description: Cantidad de órdenes de servicio históricas del cliente (0 si nunca ha traído una bicicleta).
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                severity: error
+      - name: gasto_total
+        description: Suma del campo `total` de todas las órdenes del cliente.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                # Justificación de negocio: un gasto acumulado negativo es imposible —
+                # señalaría un error de agregación aguas arriba, no un reembolso (los
+                # reembolsos no existen en este modelo de negocio).
+                severity: error
+      - name: nivel_actividad
+        description: >
+          Segmento derivado del volumen de órdenes: sin_ordenes (nunca ha traído una
+          bicicleta), bajo (1), medio (2-4), alto (5+).
+        tests:
+          - accepted_values:
+              values: ['sin_ordenes', 'bajo', 'medio', 'alto']
+
+  - name: fct_diagnosticos_externos
+    description: >
+      Diagnósticos que llegan por el canal externo (formulario web / WhatsApp),
+      cruzados contra la base de clientes ya registrados en el taller. Responde:
+      "¿este diagnóstico es de alguien que ya conocemos, y qué tan fiel es?" — el
+      criterio que usa recepción para decidir si agenda directo o si primero registra
+      al cliente. Cruza dos orígenes distintos del proyecto: el canal semi-estructurado
+      del Momento 2 (`stg_ordenes_diagnostico`) y la base relacional de clientes del
+      Momento 1 (`stg_clientes`). Grano: 1 fila por (external_order_ref,
+      requested_task).
+    columns:
+      - name: external_order_ref
+        description: Identificador del diagnóstico en el canal externo. No es un FK — ver el comentario en el modelo.
+        tests:
+          - not_null
+      - name: es_cliente_conocido
+        description: TRUE si el nombre del diagnóstico hizo match con un cliente ya registrado.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+      - name: cliente_id
+        description: Cliente al que se le atribuye el diagnóstico, si hubo match por nombre. NULL si no.
+        tests:
+          - relationships:
+              to: ref('stg_clientes')
+              field: cliente_id
+              config:
+                where: "cliente_id is not null"
